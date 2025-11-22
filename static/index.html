@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>成都美食分布数据洞察</title>
+    <!-- 引入ECharts（无需下载，直接用CDN） -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+      body {
+        margin: 20px;
+      }
+      #chart {
+        width: 100%;
+        height: 600px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>成都各区域美食店铺数量统计</h1>
+    <!-- ECharts图表容器 -->
+    <div id="chart"></div>
+
+    <script>
+      // 初始化图表
+      const myChart = echarts.init(document.getElementById("chart"));
+
+      // 调用FastAPI接口获取数据
+      fetch("http://127.0.0.1:8000/api/food/chengdu")
+        .then((response) => response.json())
+        .then((data) => {
+          // 配置图表选项（柱状图）
+          const option = {
+            title: { text: "美食店铺数量分布", left: "center" },
+            tooltip: { trigger: "axis" }, // 鼠标悬浮显示数据
+            xAxis: {
+              type: "category",
+              data: data.map((item) => item.area), // X轴：区域名称
+            },
+            yAxis: { type: "value", name: "店铺数量" }, // Y轴：数量
+            series: [
+              {
+                name: "店铺数量",
+                type: "bar", // 图表类型：柱状图
+                data: data.map((item) => item.count), // 数据
+                itemStyle: { color: "#ff6b6b" }, // 柱子颜色（红色）
+              },
+            ],
+          };
+
+          // 渲染图表
+          myChart.setOption(option);
+
+          // 窗口大小变化时，图表自适应
+          window.addEventListener("resize", () => myChart.resize());
+        })
+        .catch((error) => console.error("数据获取失败：", error));
+    </script>
+  </body>
+</html>
