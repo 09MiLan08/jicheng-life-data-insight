@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>公共服务 - 成都城市生活数据洞察</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+      /* 样式完全保留，未修改 */
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background-color: #f5f7fa;
+      }
+      .chart-container {
+        width: 100%;
+        height: 450px;
+        margin-bottom: 30px;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+      }
+      h1 {
+        text-align: center;
+        color: #2d3748;
+        margin-bottom: 30px;
+        font-size: 2rem;
+      }
+      .back-btn {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #38b2ac;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s;
+      }
+      .back-btn:hover {
+        background-color: #2c9c96;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>成都公共服务数据可视化</h1>
+
+    <!-- 各区三甲医院数量柱状图 -->
+    <div id="hospital-chart" class="chart-container"></div>
+
+    <!-- 各区中小学+幼儿园数量堆叠柱状图 -->
+    <div id="school-chart" class="chart-container"></div>
+
+    <!-- 人才类型占比饼图 -->
+    <div id="talent-chart" class="chart-container"></div>
+
+    <!-- 返回首页按钮 -->
+    <button
+      class="back-btn"
+      onclick="window.location.href='/static/index.html'"
+    >
+      返回首页
+    </button>
+
+    <script>
+      // 等待DOM加载完成后，先请求接口再初始化图表
+      document.addEventListener("DOMContentLoaded", async function () {
+        try {
+          //  从接口获取公共服务数据
+          const response = await fetch("/api/public-service");
+          const result = await response.json();
+          const publicServiceData = result.data;
+
+          // 用接口数据初始化图表
+          initCharts(publicServiceData);
+        } catch (error) {
+          console.error("获取公共服务数据失败：", error);
+          alert("数据加载失败，请刷新页面重试");
+        }
+      });
+
+      function initCharts(publicServiceData) {
+        // 各区三甲医院数量柱状图
+        const hospitalChart = echarts.init(
+          document.getElementById("hospital-chart")
+        );
+        const hospitalOption = {
+          color: ["#FF6347"],
+          title: {
+            text: "各区三甲医院数量",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          xAxis: {
+            type: "category",
+            data: publicServiceData.hospitalLabels,
+            axisLabel: {
+              fontSize: 12,
+            },
+          },
+          yAxis: {
+            type: "value",
+            name: "医院数量(家)",
+            nameTextStyle: { fontSize: 12 },
+          },
+          series: [
+            {
+              data: publicServiceData.hospitalValues,
+              type: "bar",
+              label: {
+                show: true,
+                position: "top",
+                fontSize: 12,
+              },
+              itemStyle: {
+                borderRadius: [4, 4, 0, 0],
+              },
+            },
+          ],
+          grid: {
+            left: "5%",
+            right: "5%",
+            bottom: "10%",
+            top: "15%",
+          },
+        };
+        hospitalChart.setOption(hospitalOption);
+
+        // 各区中小学+幼儿园数量堆叠柱状图
+        const schoolChart = echarts.init(
+          document.getElementById("school-chart")
+        );
+        const schoolOption = {
+          color: ["#4682B4", "#98FB98"],
+          title: {
+            text: "各区中小学及幼儿园数量",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          xAxis: {
+            type: "category",
+            data: publicServiceData.schoolLabels,
+            axisLabel: {
+              fontSize: 12,
+            },
+          },
+          yAxis: {
+            type: "value",
+            name: "机构数量(所)",
+            nameTextStyle: { fontSize: 12 },
+          },
+          series: [
+            {
+              name: "中小学",
+              data: publicServiceData.primarySecondaryValues,
+              type: "bar",
+              stack: "total",
+              label: {
+                show: true,
+                position: "inside",
+                fontSize: 10,
+              },
+              itemStyle: {
+                borderRadius: [0, 0, 0, 0],
+              },
+            },
+            {
+              name: "幼儿园",
+              data: publicServiceData.kindergartenValues,
+              type: "bar",
+              stack: "total",
+              label: {
+                show: true,
+                position: "inside",
+                fontSize: 10,
+              },
+              itemStyle: {
+                borderRadius: [4, 4, 0, 0],
+              },
+            },
+          ],
+          legend: {
+            top: "10%",
+            left: "center",
+            textStyle: { fontSize: 12 },
+          },
+          grid: {
+            left: "5%",
+            right: "5%",
+            bottom: "10%",
+            top: "20%",
+          },
+        };
+        schoolChart.setOption(schoolOption);
+
+        // 人才类型占比饼图
+        const talentChart = echarts.init(
+          document.getElementById("talent-chart")
+        );
+        const talentOption = {
+          color: ["#FF6347", "#4682B4"],
+          title: {
+            text: "成都人才类型占比",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          series: [
+            {
+              type: "pie",
+              radius: ["35%", "60%"],
+              center: ["50%", "50%"],
+              data: publicServiceData.talentData,
+              label: {
+                show: true,
+                formatter: "{b}: {c}万人 ({d}%)",
+                fontSize: 12,
+              },
+              emphasis: {
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: "rgba(0, 0, 0, 0.5)",
+                },
+              },
+            },
+          ],
+          legend: {
+            orient: "horizontal",
+            bottom: "5%",
+            left: "center",
+            textStyle: { fontSize: 12 },
+          },
+          tooltip: {
+            trigger: "item",
+            formatter: "{a} <br/>{b}: {c}万人 ({d}%)",
+          },
+        };
+        talentChart.setOption(talentOption);
+
+        // 窗口自适应
+        window.addEventListener("resize", () => {
+          hospitalChart.resize();
+          schoolChart.resize();
+          talentChart.resize();
+        });
+      }
+    </script>
+  </body>
+</html>

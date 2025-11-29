@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>消费活力 - 成都城市生活数据洞察</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+      /* 样式完全保留，未修改 */
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background-color: #f5f7fa;
+      }
+      .chart-container {
+        width: 100%;
+        height: 450px;
+        margin-bottom: 30px;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+      }
+      h1 {
+        text-align: center;
+        color: #2d3748;
+        margin-bottom: 30px;
+        font-size: 2rem;
+      }
+      .back-btn {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #9f7aea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s;
+      }
+      .back-btn:hover {
+        background-color: #805ad5;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>成都消费活力数据可视化</h1>
+
+    <!-- 各业态首店数量柱状图 -->
+    <div id="store-chart" class="chart-container"></div>
+
+    <!-- 主要商圈日均客流量横向柱状图 -->
+    <div id="business-chart" class="chart-container"></div>
+
+    <!-- 社会消费品零售额饼图 -->
+    <div id="sales-chart" class="chart-container"></div>
+
+    <!-- 返回首页按钮 -->
+    <button
+      class="back-btn"
+      onclick="window.location.href='/static/index.html'"
+    >
+      返回首页
+    </button>
+
+    <script>
+      // 等待DOM加载完成后，先请求接口再初始化图表
+      document.addEventListener("DOMContentLoaded", async function () {
+        try {
+          // 从接口获取消费活力数据
+          const response = await fetch("/api/consumption");
+          const result = await response.json();
+          const consumptionData = result.data;
+
+          // 用接口数据初始化图表
+          initCharts(consumptionData);
+        } catch (error) {
+          console.error("获取消费活力数据失败：", error);
+          alert("数据加载失败，请刷新页面重试");
+        }
+      });
+
+      function initCharts(consumptionData) {
+        // 各业态首店数量柱状图
+        const storeChart = echarts.init(document.getElementById("store-chart"));
+        const storeOption = {
+          color: ["#FFD700"],
+          title: {
+            text: "2023年各业态首店数量",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          xAxis: {
+            type: "category",
+            data: consumptionData.storeLabels,
+            axisLabel: {
+              fontSize: 12,
+            },
+          },
+          yAxis: {
+            type: "value",
+            name: "首店数量(家)",
+            nameTextStyle: { fontSize: 12 },
+          },
+          series: [
+            {
+              data: consumptionData.storeValues,
+              type: "bar",
+              label: {
+                show: true,
+                position: "top",
+                fontSize: 12,
+              },
+              itemStyle: {
+                borderRadius: [4, 4, 0, 0],
+              },
+            },
+          ],
+          grid: {
+            left: "5%",
+            right: "5%",
+            bottom: "10%",
+            top: "15%",
+          },
+        };
+        storeChart.setOption(storeOption);
+
+        //  主要商圈日均客流量横向柱状图
+        const businessChart = echarts.init(
+          document.getElementById("business-chart")
+        );
+        const businessOption = {
+          color: ["#FF69B4"],
+          title: {
+            text: "主要商圈日均客流量",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          xAxis: {
+            type: "value",
+            name: "客流量(万人次)",
+            nameTextStyle: { fontSize: 12 },
+          },
+          yAxis: {
+            type: "category",
+            data: consumptionData.businessLabels,
+            axisLabel: {
+              fontSize: 12,
+            },
+          },
+          series: [
+            {
+              data: consumptionData.businessValues,
+              type: "bar",
+              label: {
+                show: true,
+                position: "right",
+                fontSize: 12,
+              },
+              itemStyle: {
+                borderRadius: [0, 4, 4, 0],
+              },
+            },
+          ],
+          grid: {
+            left: "10%",
+            right: "5%",
+            bottom: "10%",
+            top: "15%",
+          },
+        };
+        businessChart.setOption(businessOption);
+
+        // 社会消费品零售额饼图
+        const salesChart = echarts.init(document.getElementById("sales-chart"));
+        const salesOption = {
+          color: [
+            "#FFD700",
+            "#FF69B4",
+            "#9370DB",
+            "#32CD32",
+            "#409EFF",
+            "#FF7F50",
+            "#4682B4",
+          ],
+          title: {
+            text: "社会消费品零售额占比",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          series: [
+            {
+              type: "pie",
+              radius: ["35%", "60%"],
+              center: ["50%", "50%"],
+              data: consumptionData.salesData,
+              label: {
+                show: true,
+                formatter: "{b}: {c}亿元",
+                fontSize: 12,
+              },
+              emphasis: {
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: "rgba(0, 0, 0, 0.5)",
+                },
+              },
+            },
+          ],
+          legend: {
+            orient: "horizontal",
+            bottom: "5%",
+            left: "center",
+            textStyle: { fontSize: 12 },
+          },
+          tooltip: {
+            trigger: "item",
+            formatter: "{a} <br/>{b}: {c}亿元 ({d}%)",
+          },
+        };
+        salesChart.setOption(salesOption);
+
+        // 窗口自适应
+        window.addEventListener("resize", () => {
+          storeChart.resize();
+          businessChart.resize();
+          salesChart.resize();
+        });
+      }
+    </script>
+  </body>
+</html>

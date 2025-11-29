@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>美食分布 - 成都城市生活数据洞察</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+      /* 样式完全保留，未修改 */
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background-color: #f5f7fa;
+      }
+      .chart-container {
+        width: 100%;
+        height: 450px;
+        margin-bottom: 30px;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+      }
+      h1 {
+        text-align: center;
+        color: #2d3748;
+        margin-bottom: 30px;
+        font-size: 2rem;
+      }
+      .back-btn {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #4299e1;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+      .back-btn:hover {
+        background-color: #3182ce;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>成都美食数据可视化</h1>
+
+    <!-- 各区美食店铺数量柱状图 -->
+    <div id="food-count-chart" class="chart-container"></div>
+
+    <!-- 美食类型占比饼图 -->
+    <div id="food-type-chart" class="chart-container"></div>
+
+    <!-- 美食评分与人均消费散点图 -->
+    <div id="food-score-chart" class="chart-container"></div>
+
+    <!-- 返回首页按钮 -->
+    <button
+      class="back-btn"
+      onclick="window.location.href='/static/index.html'"
+    >
+      返回首页
+    </button>
+
+    <script>
+      // 等待DOM加载完成后，先请求接口再初始化图表
+      document.addEventListener("DOMContentLoaded", async function () {
+        try {
+          //  从接口获取美食数据
+          const response = await fetch("/api/food");
+          const result = await response.json();
+          const foodData = result.data;
+
+          // 用接口数据初始化图表
+          initCharts(foodData);
+        } catch (error) {
+          console.error("获取美食数据失败：", error);
+          alert("数据加载失败，请刷新页面重试");
+        }
+      });
+
+      // 初始化图表
+      function initCharts(foodData) {
+        // 各区美食店铺数量柱状图
+        const foodCountChart = echarts.init(
+          document.getElementById("food-count-chart")
+        );
+        const foodCountOption = {
+          color: ["#E63946"],
+          title: {
+            text: "各区美食店铺数量分布",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          xAxis: {
+            type: "category",
+            data: foodData.countLabels,
+            axisLabel: {
+              fontSize: 12,
+            },
+          },
+          yAxis: {
+            type: "value",
+            name: "店铺数量(家)",
+            nameTextStyle: { fontSize: 12 },
+          },
+          series: [
+            {
+              data: foodData.countValues,
+              type: "bar",
+              label: {
+                show: true,
+                position: "top",
+                fontSize: 12,
+              },
+              itemStyle: {
+                borderRadius: [4, 4, 0, 0],
+              },
+            },
+          ],
+          grid: {
+            left: "5%",
+            right: "5%",
+            bottom: "10%",
+            top: "15%",
+          },
+        };
+        foodCountChart.setOption(foodCountOption);
+
+        // 美食类型占比饼图
+        const foodTypeChart = echarts.init(
+          document.getElementById("food-type-chart")
+        );
+        const foodTypeOption = {
+          color: ["#E63946", "#1D3557", "#457B9D"],
+          title: {
+            text: "成都美食类型占比",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          series: [
+            {
+              type: "pie",
+              radius: ["35%", "60%"],
+              center: ["50%", "50%"],
+              data: foodData.typeData,
+              label: {
+                show: true,
+                formatter: "{b}: {c}家 ({d}%)",
+                fontSize: 12,
+              },
+              emphasis: {
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: "rgba(0, 0, 0, 0.5)",
+                },
+              },
+            },
+          ],
+          legend: {
+            orient: "horizontal",
+            bottom: "5%",
+            left: "center",
+            textStyle: { fontSize: 12 },
+          },
+          tooltip: {
+            trigger: "item",
+            formatter: "{a} <br/>{b}: {c}家 ({d}%)",
+          },
+        };
+        foodTypeChart.setOption(foodTypeOption);
+
+        // 美食评分与人均消费散点图
+        const foodScoreChart = echarts.init(
+          document.getElementById("food-score-chart")
+        );
+
+        const foodScoreOption = {
+          color: ["#E63946"],
+          title: {
+            text: "美食评分与人均消费关系",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          xAxis: {
+            type: "value",
+            name: "人均消费(元)",
+            min: 0,
+            max: 150,
+            nameTextStyle: { fontSize: 12 },
+          },
+          yAxis: {
+            type: "value",
+            name: "平均评分",
+            min: 4.0,
+            max: 5.0,
+            nameTextStyle: { fontSize: 12 },
+          },
+          series: [
+            {
+              type: "scatter",
+              symbolSize: 20,
+              data: foodData.scatterData,
+              label: {
+                show: true,
+                formatter: (params) => params.data.name,
+                fontSize: 10,
+                position: "top",
+              },
+              itemStyle: {
+                opacity: 0.8,
+              },
+            },
+          ],
+          grid: {
+            left: "10%",
+            right: "10%",
+            bottom: "15%",
+            top: "15%",
+          },
+          tooltip: {
+            trigger: "item",
+            formatter: function (params) {
+              return (
+                params.data.name +
+                "<br/>人均: " +
+                params.data.value[0] +
+                "元<br/>评分: " +
+                params.data.value[1]
+              );
+            },
+          },
+        };
+        foodScoreChart.setOption(foodScoreOption);
+
+        // 窗口自适应
+        window.addEventListener("resize", () => {
+          foodCountChart.resize();
+          foodTypeChart.resize();
+          foodScoreChart.resize();
+        });
+      }
+    </script>
+  </body>
+</html>

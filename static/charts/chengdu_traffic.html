@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>交通出行 - 成都城市生活数据洞察</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+      /* 样式完全保留，未修改 */
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background-color: #f5f7fa;
+      }
+      .chart-container {
+        width: 100%;
+        height: 450px;
+        margin-bottom: 30px;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+      }
+      h1 {
+        text-align: center;
+        color: #2d3748;
+        margin-bottom: 30px;
+        font-size: 2rem;
+      }
+      .back-btn {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #409eff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s;
+      }
+      .back-btn:hover {
+        background-color: #337ecc;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>成都交通出行数据可视化</h1>
+
+    <!-- 地铁线路运营里程柱状图 -->
+    <div id="mileage-chart" class="chart-container"></div>
+
+    <!-- 早晚高峰客流折线图 -->
+    <div id="flow-chart" class="chart-container"></div>
+
+    <!-- 出行方式占比饼图 -->
+    <div id="mode-chart" class="chart-container"></div>
+
+    <!-- 返回首页按钮 -->
+    <button
+      class="back-btn"
+      onclick="window.location.href='/static/index.html'"
+    >
+      返回首页
+    </button>
+
+    <script>
+      // 等待DOM加载完成后，先请求接口再初始化图表
+      document.addEventListener("DOMContentLoaded", async function () {
+        try {
+          // 从接口获取交通数据
+          const response = await fetch("/api/traffic");
+          const result = await response.json();
+          const trafficData = result.data; //
+
+          // 用接口数据初始化图表
+          initCharts(trafficData);
+        } catch (error) {
+          console.error("获取交通数据失败：", error);
+          alert("数据加载失败，请刷新页面重试");
+        }
+      });
+
+      function initCharts(trafficData) {
+        // 地铁线路运营里程柱状图
+        const mileageChart = echarts.init(
+          document.getElementById("mileage-chart")
+        );
+        const mileageOption = {
+          color: ["#409EFF"],
+          title: {
+            text: "地铁线路运营里程",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          xAxis: {
+            type: "category",
+            data: trafficData.mileageLabels,
+            axisLabel: {
+              rotate: 30,
+              fontSize: 12,
+            },
+          },
+          yAxis: {
+            type: "value",
+            name: "里程(公里)",
+            nameTextStyle: { fontSize: 12 },
+          },
+          series: [
+            {
+              data: trafficData.mileageValues,
+              type: "bar",
+              label: {
+                show: true,
+                position: "top",
+                formatter: "{c}km",
+                fontSize: 12,
+              },
+              itemStyle: {
+                borderRadius: [4, 4, 0, 0],
+              },
+            },
+          ],
+          grid: {
+            left: "5%",
+            right: "5%",
+            bottom: "15%",
+            top: "15%",
+          },
+        };
+        mileageChart.setOption(mileageOption);
+
+        // 早晚高峰客流折线图
+        const flowChart = echarts.init(document.getElementById("flow-chart"));
+        const flowOption = {
+          color: ["#FF7F50", "#9370DB"],
+          title: {
+            text: "地铁线路早晚高峰客流",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          xAxis: {
+            type: "category",
+            data: trafficData.flowLabels,
+            axisLabel: {
+              rotate: 30,
+              fontSize: 12,
+            },
+          },
+          yAxis: {
+            type: "value",
+            name: "客流(万人次/小时)",
+            nameTextStyle: { fontSize: 12 },
+          },
+          series: [
+            {
+              name: "早高峰",
+              data: trafficData.morningPeakValues,
+              type: "line",
+              smooth: true,
+              lineStyle: { width: 3 },
+              itemStyle: { color: "#FF7F50" },
+              symbol: "circle",
+              symbolSize: 8,
+              label: {
+                show: true,
+                position: "top",
+                fontSize: 10,
+              },
+            },
+            {
+              name: "晚高峰",
+              data: trafficData.eveningPeakValues,
+              type: "line",
+              smooth: true,
+              lineStyle: { width: 3 },
+              itemStyle: { color: "#9370DB" },
+              symbol: "circle",
+              symbolSize: 8,
+              label: {
+                show: true,
+                position: "top",
+                fontSize: 10,
+              },
+            },
+          ],
+          legend: {
+            top: "10%",
+            left: "center",
+            textStyle: { fontSize: 12 },
+          },
+          grid: {
+            left: "5%",
+            right: "5%",
+            bottom: "15%",
+            top: "20%",
+          },
+        };
+        flowChart.setOption(flowOption);
+
+        //  出行方式占比饼图
+        const modeChart = echarts.init(document.getElementById("mode-chart"));
+        const modeOption = {
+          color: ["#409EFF", "#FF7F50", "#9370DB", "#32CD32"],
+          title: {
+            text: "成都出行方式占比",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          series: [
+            {
+              type: "pie",
+              radius: ["35%", "60%"],
+              center: ["50%", "50%"],
+              data: trafficData.modeData,
+              label: {
+                show: true,
+                formatter: "{b}: {d}%",
+                fontSize: 12,
+              },
+              emphasis: {
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: "rgba(0, 0, 0, 0.5)",
+                },
+              },
+            },
+          ],
+          legend: {
+            orient: "horizontal",
+            bottom: "5%",
+            left: "center",
+            textStyle: { fontSize: 12 },
+          },
+          tooltip: {
+            trigger: "item",
+            formatter: "{a} <br/>{b}: {c}万人次 ({d}%)",
+          },
+        };
+        modeChart.setOption(modeOption);
+
+        // 窗口自适应
+        window.addEventListener("resize", () => {
+          mileageChart.resize();
+          flowChart.resize();
+          modeChart.resize();
+        });
+      }
+    </script>
+  </body>
+</html>

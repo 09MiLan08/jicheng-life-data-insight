@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>生态宜居 - 成都城市生活数据洞察</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+      /* 样式完全保留，未修改 */
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background-color: #f5f7fa;
+      }
+      .chart-container {
+        width: 100%;
+        height: 450px;
+        margin-bottom: 30px;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+      }
+      h1 {
+        text-align: center;
+        color: #2d3748;
+        margin-bottom: 30px;
+        font-size: 2rem;
+      }
+      .back-btn {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #48bb78;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s;
+      }
+      .back-btn:hover {
+        background-color: #38a169;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>成都生态宜居数据可视化</h1>
+
+    <!-- 各区天府绿道长度柱状图 -->
+    <div id="greenway-chart" class="chart-container"></div>
+
+    <!-- 各区建成区绿化覆盖率折线图 -->
+    <div id="coverage-chart" class="chart-container"></div>
+
+    <!-- 生态区域面积占比饼图 -->
+    <div id="eco-area-chart" class="chart-container"></div>
+
+    <!-- 返回首页按钮 -->
+    <button
+      class="back-btn"
+      onclick="window.location.href='/static/index.html'"
+    >
+      返回首页
+    </button>
+
+    <script>
+      // 等待DOM加载完成后，先请求接口再初始化图表
+      document.addEventListener("DOMContentLoaded", async function () {
+        try {
+          // 从接口获取生态宜居数据
+          const response = await fetch("/api/ecology");
+          const result = await response.json();
+          const ecologyData = result.data;
+
+          // 用接口数据初始化图表
+          initCharts(ecologyData);
+        } catch (error) {
+          console.error("获取生态宜居数据失败：", error);
+          alert("数据加载失败，请刷新页面重试");
+        }
+      });
+
+      function initCharts(ecologyData) {
+        //  各区天府绿道长度柱状图
+        const greenwayChart = echarts.init(
+          document.getElementById("greenway-chart")
+        );
+        const greenwayOption = {
+          color: ["#2E8B57"],
+          title: {
+            text: "各区天府绿道长度",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          xAxis: {
+            type: "category",
+            data: ecologyData.greenwayLabels,
+            axisLabel: {
+              fontSize: 12,
+            },
+          },
+          yAxis: {
+            type: "value",
+            name: "长度(公里)",
+            nameTextStyle: { fontSize: 12 },
+          },
+          series: [
+            {
+              data: ecologyData.greenwayValues,
+              type: "bar",
+              label: {
+                show: true,
+                position: "top",
+                formatter: "{c}km",
+                fontSize: 12,
+              },
+              itemStyle: {
+                borderRadius: [4, 4, 0, 0],
+              },
+            },
+          ],
+          grid: {
+            left: "5%",
+            right: "5%",
+            bottom: "10%",
+            top: "15%",
+          },
+        };
+        greenwayChart.setOption(greenwayOption);
+
+        // 各区建成区绿化覆盖率折线图
+        const coverageChart = echarts.init(
+          document.getElementById("coverage-chart")
+        );
+        const coverageOption = {
+          color: ["#32CD32"],
+          title: {
+            text: "各区建成区绿化覆盖率",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          xAxis: {
+            type: "category",
+            data: ecologyData.coverageLabels,
+            axisLabel: {
+              fontSize: 12,
+            },
+          },
+          yAxis: {
+            type: "value",
+            name: "覆盖率(%)",
+            max: 60,
+            nameTextStyle: { fontSize: 12 },
+          },
+          series: [
+            {
+              data: ecologyData.coverageValues,
+              type: "line",
+              smooth: true,
+              lineStyle: { width: 3 },
+              itemStyle: { color: "#2E8B57" },
+              symbol: "circle",
+              symbolSize: 8,
+              label: {
+                show: true,
+                position: "top",
+                formatter: "{c}%",
+                fontSize: 12,
+              },
+            },
+          ],
+          grid: {
+            left: "5%",
+            right: "5%",
+            bottom: "10%",
+            top: "15%",
+          },
+        };
+        coverageChart.setOption(coverageOption);
+
+        // 生态区域面积占比饼图
+        const ecoAreaChart = echarts.init(
+          document.getElementById("eco-area-chart")
+        );
+        const ecoAreaOption = {
+          color: ["#2E8B57", "#32CD32", "#98FB98", "#00FA9A"],
+          title: {
+            text: "生态区域面积占比",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          series: [
+            {
+              type: "pie",
+              radius: ["35%", "60%"],
+              center: ["50%", "50%"],
+              data: ecologyData.ecoAreaData,
+              label: {
+                show: true,
+                formatter: "{b}: {c}km²",
+                fontSize: 12,
+              },
+              emphasis: {
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: "rgba(0, 0, 0, 0.5)",
+                },
+              },
+            },
+          ],
+          legend: {
+            orient: "horizontal",
+            bottom: "5%",
+            left: "center",
+            textStyle: { fontSize: 12 },
+          },
+          tooltip: {
+            trigger: "item",
+            formatter: "{a} <br/>{b}: {c}km² ({d}%)",
+          },
+        };
+        ecoAreaChart.setOption(ecoAreaOption);
+
+        // 窗口自适应
+        window.addEventListener("resize", () => {
+          greenwayChart.resize();
+          coverageChart.resize();
+          ecoAreaChart.resize();
+        });
+      }
+    </script>
+  </body>
+</html>

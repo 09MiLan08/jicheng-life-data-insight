@@ -2,58 +2,296 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <title>成都美食分布数据洞察</title>
-    <!-- 引入ECharts（无需下载，直接用CDN） -->
+    <title>成都城市生活数据洞察平台</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
     <style>
-      body {
-        margin: 20px;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Microsoft YaHei", Arial, sans-serif;
       }
-      #chart {
-        width: 100%;
-        height: 600px;
+      body {
+        background-color: #f5f7fa;
+        padding: 20px;
+      }
+      /* 顶部标题区 */
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .header h1 {
+        color: #2d3748;
+        font-size: 2.2rem;
+        margin-bottom: 10px;
+      }
+      .header p {
+        color: #718096;
+        font-size: 1.1rem;
+      }
+      /* 导航按钮区 */
+      .nav-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 40px;
+      }
+      .nav-btn {
+        padding: 12px 24px;
+        background-color: #4299e1;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .nav-btn:hover {
+        background-color: #3182ce;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+      .nav-btn:active {
+        transform: translateY(0);
+      }
+      /* 首页总览图表区 */
+      .overview-title {
+        text-align: center;
+        color: #2d3748;
+        font-size: 1.8rem;
+        margin-bottom: 20px;
+      }
+      .chart-overview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        justify-content: center;
+      }
+      .overview-chart {
+        width: 45%;
+        min-width: 400px;
+        height: 400px;
+        background-color: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+      /* 响应式适配 */
+      @media (max-width: 900px) {
+        .overview-chart {
+          width: 100%;
+          min-width: 300px;
+        }
+        .header h1 {
+          font-size: 1.8rem;
+        }
+        .nav-btn {
+          padding: 10px 20px;
+          font-size: 0.9rem;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>成都各区域美食店铺数量统计</h1>
-    <!-- ECharts图表容器 -->
-    <div id="chart"></div>
+    <!-- 顶部标题 -->
+    <div class="header">
+      <h1>成都城市生活数据洞察平台</h1>
+      <p>覆盖美食、旅游、交通、公共服务等7大场景，用数据看懂蓉城生活</p>
+    </div>
+
+    <!-- 核心导航按钮（7大主题） -->
+    <div class="nav-container">
+      <button
+        class="nav-btn"
+        onclick="window.location.href='/static/charts/chengdu_food.html'"
+      >
+        美食分布
+      </button>
+      <button
+        class="nav-btn"
+        onclick="window.location.href='/static/charts/chengdu_tourism.html'"
+      >
+        旅游景点
+      </button>
+      <button
+        class="nav-btn"
+        onclick="window.location.href='/static/charts/chengdu_traffic.html'"
+      >
+        交通出行
+      </button>
+      <button
+        class="nav-btn"
+        onclick="window.location.href='/static/charts/chengdu_public_service.html'"
+      >
+        公共服务
+      </button>
+      <button
+        class="nav-btn"
+        onclick="window.location.href='/static/charts/chengdu_consumption.html'"
+      >
+        消费活力
+      </button>
+      <button
+        class="nav-btn"
+        onclick="window.location.href='/static/charts/chengdu_ecology.html'"
+      >
+        生态宜居
+      </button>
+      <button
+        class="nav-btn"
+        onclick="window.location.href='/static/charts/chengdu_community.html'"
+      >
+        社区生活
+      </button>
+    </div>
+
+    <!-- 首页总览图表（数据概览，提升页面价值） -->
+    <h2 class="overview-title">数据总览</h2>
+    <div class="chart-overview">
+      <!-- 1. 各场景数据覆盖度饼图 -->
+      <div id="coverage-chart" class="overview-chart"></div>
+      <!-- 2. 核心数据TOP5排名柱状图 -->
+      <div id="top5-chart" class="overview-chart"></div>
+    </div>
 
     <script>
-      // 初始化图表
-      const myChart = echarts.init(document.getElementById("chart"));
+      // 确保DOM加载完成后再初始化图表
+      document.addEventListener("DOMContentLoaded", function () {
+        initCharts();
+      });
 
-      // 调用FastAPI接口获取数据
-      fetch("http://127.0.0.1:8000/api/food/chengdu")
-        .then((response) => response.json())
-        .then((data) => {
-          // 配置图表选项（柱状图）
-          const option = {
-            title: { text: "美食店铺数量分布", left: "center" },
-            tooltip: { trigger: "axis" }, // 鼠标悬浮显示数据
-            xAxis: {
-              type: "category",
-              data: data.map((item) => item.area), // X轴：区域名称
-            },
-            yAxis: { type: "value", name: "店铺数量" }, // Y轴：数量
-            series: [
-              {
-                name: "店铺数量",
-                type: "bar", // 图表类型：柱状图
-                data: data.map((item) => item.count), // 数据
-                itemStyle: { color: "#ff6b6b" }, // 柱子颜色（红色）
+      function initCharts() {
+        // 1. 各场景数据覆盖度饼图
+        const coverageChart = echarts.init(
+          document.getElementById("coverage-chart")
+        );
+
+        // 明确设置颜色调色板
+        coverageChart.setOption({
+          color: [
+            "#E63946",
+            "#219EBC",
+            "#4299e1",
+            "#38b2ac",
+            "#9f7aea",
+            "#48bb78",
+            "#FB8500",
+          ],
+          title: {
+            text: "7大场景数据覆盖度",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          series: [
+            {
+              type: "pie",
+              radius: ["45%", "70%"],
+              data: [
+                { value: 10, name: "美食（10类）" },
+                { value: 10, name: "旅游（10个景点）" },
+                { value: 11, name: "交通（11类出行方式）" },
+                { value: 7, name: "公共服务（7个区域）" },
+                { value: 7, name: "消费活力（7类业态）" },
+                { value: 7, name: "生态宜居（7个区域）" },
+                { value: 7, name: "社区生活（7个区域）" },
+              ],
+              label: {
+                show: true,
+                formatter: "{b}\n{d}%",
+                fontSize: 11,
               },
+              itemStyle: {
+                borderWidth: 2,
+                borderColor: "#fff",
+              },
+              emphasis: {
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: "rgba(0,0,0,0.2)",
+                },
+              },
+            },
+          ],
+          legend: {
+            show: false,
+          },
+        });
+
+        // 2. 核心数据TOP5排名柱状图
+        const top5Chart = echarts.init(document.getElementById("top5-chart"));
+
+        // 为柱状图定义明确的颜色
+        const barColors = [
+          "#FB8500",
+          "#219EBC",
+          "#219EBC",
+          "#E63946",
+          "#4299e1",
+        ];
+
+        top5Chart.setOption({
+          color: barColors, // 设置全局颜色
+          title: {
+            text: "核心数据TOP5",
+            left: "center",
+            textStyle: { fontSize: 16 },
+          },
+          xAxis: {
+            type: "category",
+            data: [
+              "春熙路（365万）",
+              "大熊猫基地（180万）",
+              "宽窄巷子（150万）",
+              "武侯区美食（93家）",
+              "公交干线（85万客流）",
             ],
-          };
+            axisLabel: {
+              rotate: 30,
+              fontSize: 11,
+            },
+          },
+          yAxis: {
+            type: "value",
+            name: "数值（万人次/家）",
+            nameTextStyle: { fontSize: 11 },
+          },
+          series: [
+            {
+              data: [
+                { value: 365, itemStyle: { color: barColors[0] } },
+                { value: 180, itemStyle: { color: barColors[1] } },
+                { value: 150, itemStyle: { color: barColors[2] } },
+                { value: 93, itemStyle: { color: barColors[3] } },
+                { value: 85, itemStyle: { color: barColors[4] } },
+              ],
+              type: "bar",
+              label: {
+                show: true,
+                position: "top",
+                fontSize: 11,
+              },
+              itemStyle: {
+                borderRadius: 4,
+              },
+            },
+          ],
+          grid: {
+            left: "10%",
+            right: "5%",
+            bottom: "25%",
+            top: "15%",
+          },
+        });
 
-          // 渲染图表
-          myChart.setOption(option);
-
-          // 窗口大小变化时，图表自适应
-          window.addEventListener("resize", () => myChart.resize());
-        })
-        .catch((error) => console.error("数据获取失败：", error));
+        // 窗口自适应
+        window.addEventListener("resize", () => {
+          coverageChart.resize();
+          top5Chart.resize();
+        });
+      }
     </script>
   </body>
 </html>
